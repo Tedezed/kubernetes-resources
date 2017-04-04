@@ -1,0 +1,176 @@
+---
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: stolon-sentinel
+spec:
+  replicas: 2
+  selector:
+    name: stolon-sentinel
+  template:
+    metadata:
+      labels:
+        name: stolon-sentinel
+        stolon-cluster: "kube-stolon"
+        stolon-sentinel: "true"
+    spec:
+      containers:
+      - name: stolon-sentinel
+        image: sorintlab/stolon:master-pg9.6
+        command:
+          - "/bin/bash"
+          - "-ec"
+          - |
+            exec gosu stolon stolon-sentinel
+        env:
+          - name: STSENTINEL_CLUSTER_NAME
+            value: "kube-stolon"
+          - name: STSENTINEL_STORE_BACKEND
+            value: "etcd" # Or consul
+          - name: STSENTINEL_STORE_ENDPOINTS
+            value: "http://etcd:2379"
+          ## Uncomment this to enable debug logs
+          #- name: STSENTINEL_DEBUG
+          #  value: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+    name: stolon
+type: Opaque
+data:
+    # create by `echo -n "password1" | base64
+    password: cGFzc3dvcmQxCg==
+---
+# TODO(sgotti) update this to StatefulSet (PetSet where renamed to StatefulSet) when k8s 1.5 is released
+apiVersion: apps/v1beta1
+kind: StatefulSet
+#apiVersion: apps/v1alpha1
+#kind: PetSet
+metadata:
+  name: stolon-keeper
+spec:
+  serviceName: "stolon-keeper"
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: stolon-keeper
+      annotations:
+        pod.alpha.kubernetes.io/initialized: "true"
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: stolon-keeper
+        image: sorintlab/stolon:master-pg9.6
+        command:
+          - "/bin/bash"
+          - "-ec"
+          - |
+            # Generate our keeper uid using the pod index
+            IFS='-' read -ra ADDR <<< "$(hostname)"
+            export STKEEPER_UID="keeper${ADDR[-1]}"
+            export POD_IP=$(hostname -i)
+            export STKEEPER_PG_LISTEN_ADDRESS=$POD_IP
+            export STOLON_DATA=/stolon-data
+            chown stolon:stolon $STOLON_DATA
+            exec gosu stolon stolon-keeper --data-dir $STOLON_DATA
+        env:
+          - name: STKEEPER_CLUSTER_NAME
+          # TODO(sgotti) Get cluster name from "stoloncluster" label using a downward volume api instead of duplicating the name here
+            value: "kube-stolon"
+          - name: STKEEPER_STORE_BACKEND
+            value: "etcd" # Or consul
+          - name: STKEEPER_STORE_ENDPOINTS
+            value: "http://etcd:2379"
+          - name: STKEEPER_PG_REPL_USERNAME
+            value: "repluser"
+            # Or use a password file like in the below supersuser password
+          - name: STKEEPER_PG_REPL_PASSWORD
+            value: "replpassword"
+          - name: STKEEPER_PG_SU_USERNAME
+            value: "stolon"
+          - name: STKEEPER_PG_SU_PASSWORDFILE
+            value: "/etc/secrets/stolon/password"
+          ## Uncomment this to enable debug logs
+          #- name: STKEEPER_DEBUG
+          #  value: "true"
+        ports:
+          - containerPort: 5432
+        volumeMounts:
+        - mountPath: /stolon-data
+          name: data
+        - mountPath: /etc/secrets/stolon
+          name: stolon
+      volumes:
+        - name: stolon
+          secret:
+            secretName: stolon
+  ## Define your own volumeClaimTemplate. This example uses a dynamic provisioning with a storage class of type "anything" that works also with minikube and will provision volume using the hostPath provider, but this shouldn't be used in production and won't work in multi-node cluster.
+  ## In production you should use your own defined storage-class and configure your persistent volumes (statically or dynamic using a provisioner, see k8s doc).
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      annotations:
+        volume.alpha.kubernetes.io/storage-class: anything
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stolon-proxy-service
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    stolon-proxy: "true"
+    stolon-cluster: "kube-stolon"
+---
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: stolon-proxy
+spec:
+  replicas: 2
+  selector:
+    name: stolon-proxy
+  template:
+    metadata:
+      labels:
+        name: stolon-proxy
+        stolon-cluster: "kube-stolon"
+        stolon-proxy: "true"
+    spec:
+      containers:
+      - name: stolon-proxy
+        image: sorintlab/stolon:master-pg9.6
+        command:
+          - "/bin/bash"
+          - "-ec"
+          - |
+            exec gosu stolon stolon-proxy
+        env:
+          - name: STPROXY_CLUSTER_NAME
+          # TODO(sgotti) Get cluster name from "stoloncluster" label using a downward volume api instead of duplicating the name here
+            value: "kube-stolon"
+          - name: STPROXY_STORE_BACKEND
+            value: "etcd" # Or consul
+          - name: STPROXY_STORE_ENDPOINTS
+            value: "http://etcd:2379"
+          - name: STPROXY_LISTEN_ADDRESS
+            value: "0.0.0.0"
+          ## Uncomment this to enable debug logs
+          #- name: STPROXY_DEBUG
+          #  value: "true"
+        ports:
+          - containerPort: 5432
+        readinessProbe:
+          tcpSocket:
+            port: 5432
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
