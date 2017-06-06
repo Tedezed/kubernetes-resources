@@ -103,7 +103,7 @@ metadata:
   namespace: kube-system
 spec:
   rules:
-  - host: grafana9045786905687560325348756934084523246.freyishop.es
+  - host: test-grafana.com
     http:
       paths:
       - backend:
