@@ -1,0 +1,8 @@
+export PROJECT_ID="proy-000000000001" \
+	SA_NAME="secure-00000001" \
+	CLUSTER_NAME="cluster-01" \
+	NODE_POOL="secure-pool-1" \
+	ZONE="europe-west1-b" \
+	MACHINE_TYPE="n1-standard-2"
+	GKE_USERNAME="secure" \
+	MAX_NODES=3
