@@ -1,7 +1,9 @@
 #!/bin/bash -e
 
-# Adapted from:
-# https://github.com/colhom/coreos-docs/blob/cluster-dump-restore/kubernetes/cluster-dump-restore.md
+# Adapted from: https://github.com/colhom/coreos-docs/blob/cluster-dump-restore/kubernetes/cluster-dump-restore.md
+# Inspired in: https://gist.github.com/adambom/193d923ca51e8ffab325fe8e25fa03aa
+
+# Example execution: bash kubebackup.bash
 
 ABSOLUTE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/bkp"
 mkdir -p $ABSOLUTE_PATH
