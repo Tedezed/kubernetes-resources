@@ -76,7 +76,7 @@ for ns in $(jq -r '.metadata.name' < $ABSOLUTE_PATH/1-ns.json);do
         else
             . 
         end' >> $ABSOLUTE_PATH/3-pvc-dump.json
-    kubectl --namespace="${ns}" get --export -o=json svc,rc,cronjobs,secrets,ds,cm,deploy,hpa,quota,limits,storageclass,hpa,sa,sts | \
+    kubectl --namespace="${ns}" get --export -o=json svc,rc,cronjobs,secrets,ds,cm,deploy,hpa,quota,limits,storageclass,hpa,sa,sts,ingress | \
     jq '.items[] |
         select(.type!="kubernetes.io/service-account-token") |
         del(
