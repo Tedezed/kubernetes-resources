@@ -38,7 +38,10 @@ elif [ "$MODE" == "kube_firefox" ]
 then
 	for_domain "firefox" "$(kubectl get ingress --all-namespaces |  grep -v HOSTS | awk '{ print $3 }' | sed 's#,# #g' | tr '\n' ' ')"
 else
-	# LIST_DOMAIN="example1.com example2.com example3.com"
-	echo "Example: bash check_list_domain.bash MODE [LIST_DOMAIN]
-	Modes: list_dns, kube_dns, kube_firefox"
+	echo 'Example: 
+
+	Execution: bash check_list_domain.bash MODE ["$LIST_DOMAIN"]
+	Modes: list_dns, kube_dns, kube_firefox
+
+	LIST_DOMAIN="example1.com example2.com example3.com"'
 fi
