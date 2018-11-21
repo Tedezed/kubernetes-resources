@@ -22,7 +22,7 @@ function for_domain {
 	sleep $SLEEP_TIME
 }
 
-if [ "$MODE" == "dns_list" ]
+if [ "$MODE" == "list_dns" ]
 then
 	while true
 	do
