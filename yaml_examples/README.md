@@ -25,7 +25,7 @@ spec:
         SSLCertificateKeyFile /tmp/server.key
       </VirtualHost>
       " >> /etc/apache2/sites-enabled/000-default.conf
-      && bash /tmp/docker_run.sh' | recode html..ascii > /tmp/custom_init.bash; bash /tmp/custom_init.bash
+      && sh /tmp/docker_run.sh' | recode html..ascii > /tmp/custom_init.bash; bash /tmp/custom_init.bash
   image: prestashop/prestashop:1.6
   name: ps-test
   ports:
