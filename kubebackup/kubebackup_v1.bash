@@ -128,5 +128,5 @@ for ns in $(jq -r '.metadata.name' < $ABSOLUTE_PATH/1-ns.json);do
         end' >> $ABSOLUTE_PATH/5-ep-cluster-dump.json
 done
 
-python create_endpoints.py $ABSOLUTE_PATH
-mv $ABSOLUTE_PATH/output-ep.json $ABSOLUTE_PATH/5-ep-cluster-dump.json
+#python create_endpoints.py $ABSOLUTE_PATH
+#mv $ABSOLUTE_PATH/output-ep.json $ABSOLUTE_PATH/5-ep-cluster-dump.json
