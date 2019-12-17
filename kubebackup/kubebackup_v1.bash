@@ -8,15 +8,27 @@
 ABSOLUTE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/bkp"
 mkdir -p $ABSOLUTE_PATH
 
-kubectl get --export -o=json ns | \
-jq '.items[] |
-    del(.status,
-        .metadata.uid,
-        .metadata.selfLink,
-        .metadata.resourceVersion,
-        .metadata.creationTimestamp,
-        .metadata.generation
-    )' > $ABSOLUTE_PATH/1-ns.json
+if [ -z "$1" ]; then
+    kubectl get --export -o=json ns | \
+    jq '.items[] |
+        del(.status,
+            .metadata.uid,
+            .metadata.selfLink,
+            .metadata.resourceVersion,
+            .metadata.creationTimestamp,
+            .metadata.generation
+        )' > $ABSOLUTE_PATH/1-ns.json
+else
+    kubectl get --export -o=json ns $1 | \
+    jq 'del(.status,
+            .metadata.uid,
+            .metadata.selfLink,
+            .metadata.resourceVersion,
+            .metadata.creationTimestamp,
+            .metadata.generation
+        )' > $ABSOLUTE_PATH/1-ns.json
+fi
+
 
 kubectl get --export -o=json pv --all-namespaces | \
     jq '.items[] |
