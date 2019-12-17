@@ -5,14 +5,6 @@
 
 # Example execution: bash kubebackup.bash
 
-if [ "$2" == "small" ]; then
-    cluster_content='svc,rc,cronjobs,secrets,ds,cm,deploy,hpa,sa,sts,ingress'
-elif [ "$2" == "custom" ]; then
-    cluster_content="$3"
-else
-    cluster_content='svc,rc,cronjobs,secrets,ds,cm,deploy,hpa,quota,limits,storageclass,sa,sts,ingress'
-fi
-
 ABSOLUTE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/bkp"
 mkdir -p $ABSOLUTE_PATH
 
@@ -36,7 +28,6 @@ else
             .metadata.generation
         )' > $ABSOLUTE_PATH/1-ns.json
 fi
-
 
 kubectl get --export -o=json pv --all-namespaces | \
     jq '.items[] |
@@ -63,6 +54,17 @@ kubectl get --export -o=json pv --all-namespaces | \
         else
             . 
         end' >> $ABSOLUTE_PATH/2-pv-cluster.json
+
+if [ "$2" == "small" ]; then
+    cluster_content='svc,rc,cronjobs,secrets,ds,cm,deploy,hpa,sa,sts,ingress'
+    cp $ABSOLUTE_PATH/2-pv-cluster.json $ABSOLUTE_PATH/tmp-2-pv-cluster.json
+    cat $ABSOLUTE_PATH/tmp-2-pv-cluster.json | jq 'select(.spec.claimRef.namespace=="'$1'")' > $ABSOLUTE_PATH/2-pv-cluster.json
+    rm $ABSOLUTE_PATH/tmp-2-pv-cluster.json
+elif [ "$2" == "custom" ]; then
+    cluster_content="$3"
+else
+    cluster_content='svc,rc,cronjobs,secrets,ds,cm,deploy,hpa,quota,limits,storageclass,sa,sts,ingress'
+fi
 
 echo "" > $ABSOLUTE_PATH/3-pvc-dump.json
 echo "" > $ABSOLUTE_PATH/4-cluster-dump.json

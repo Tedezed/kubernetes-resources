@@ -11,7 +11,7 @@ bash kubebackup_v1.bash
 Your backup is in bkp.
 
 
-## Other uses
+## Using namespace
 
 Backup only one namespace:
 
@@ -19,7 +19,7 @@ Backup only one namespace:
 bash kubebackup_v1.bash namespace_x
 ```
 
-Backup small `svc,rc,cronjobs,secrets,ds,cm,deploy,hpa,sa,sts,ingress`
+Backup small `svc,rc,cronjobs,secrets,ds,cm,deploy,hpa,sa,sts,ingress` and pv with `claimRef` of namespace
 
 ```
 bash kubebackup_v1.bash namespace_x small
