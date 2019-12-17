@@ -5,6 +5,14 @@
 
 # Example execution: bash kubebackup.bash
 
+if [ "$2" == "small" ]; then
+    cluster_content='svc,rc,cronjobs,secrets,ds,cm,deploy,hpa,sa,sts,ingress'
+elif [ "$2" == "custom" ]; then
+    cluster_content="$3"
+else
+    cluster_content='svc,rc,cronjobs,secrets,ds,cm,deploy,hpa,quota,limits,storageclass,sa,sts,ingress'
+fi
+
 ABSOLUTE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/bkp"
 mkdir -p $ABSOLUTE_PATH
 
@@ -88,7 +96,7 @@ for ns in $(jq -r '.metadata.name' < $ABSOLUTE_PATH/1-ns.json);do
         else
             . 
         end' >> $ABSOLUTE_PATH/3-pvc-dump.json
-    kubectl --namespace="${ns}" get --export -o=json svc,rc,cronjobs,secrets,ds,cm,deploy,hpa,quota,limits,storageclass,hpa,sa,sts,ingress | \
+    kubectl --namespace="${ns}" get --export -o=json $cluster_content | \
     jq '.items[] |
         select(.type!="kubernetes.io/service-account-token") |
         del(
